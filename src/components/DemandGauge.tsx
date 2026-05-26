@@ -3,16 +3,16 @@ interface Props {
   want: number;
 }
 
-// Map the want/have ratio onto a 0..1 arc fill. Most records sit well below a
-// ratio of 1, so the lower bands are stretched to stay readable; a ratio of
-// 2+ (far more wanters than owners) pins the gauge to "Very high".
+// Map the want/have ratio onto a 0..1 arc fill. The band edges line up with
+// each fifth of the arc and match demandLevel() below: a ratio of 0.4 sits at
+// the start of "High" (0.6 fill), and 0.7+ pins the gauge to "Very high".
 const STOPS: [ratio: number, fraction: number][] = [
   [0, 0],
   [0.1, 0.2],
-  [0.3, 0.4],
-  [0.6, 0.6],
-  [1.0, 0.8],
-  [2.0, 1.0],
+  [0.2, 0.4],
+  [0.4, 0.6],
+  [0.7, 0.8],
+  [1.0, 1.0],
 ];
 
 function fractionForRatio(ratio: number): number {
@@ -30,9 +30,9 @@ function fractionForRatio(ratio: number): number {
 }
 
 function demandLevel(ratio: number): { level: string; color: string } {
-  if (!isFinite(ratio) || ratio >= 1.0) return { level: "Very high", color: "#ef4444" };
-  if (ratio >= 0.6) return { level: "High", color: "#f97316" };
-  if (ratio >= 0.3) return { level: "Moderate", color: "#eab308" };
+  if (!isFinite(ratio) || ratio >= 0.7) return { level: "Very high", color: "#ef4444" };
+  if (ratio >= 0.4) return { level: "High", color: "#f97316" };
+  if (ratio >= 0.2) return { level: "Moderate", color: "#eab308" };
   if (ratio >= 0.1) return { level: "Low", color: "#22c55e" };
   return { level: "Very low", color: "#5b8cff" };
 }
