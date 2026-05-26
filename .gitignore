@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+api/node_modules/
+
+# Build output
+dist/
+api/dist/
+
+# Azure Functions local runtime
+bin/
+obj/
+api/bin/
+api/obj/
+
+# Secrets — never commit these
+api/local.settings.json
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# SWA CLI
+.swa/

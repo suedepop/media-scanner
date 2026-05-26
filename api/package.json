@@ -1,0 +1,9 @@
+{
+  "name": "media-scanner-api",
+  "version": "1.0.0",
+  "description": "Azure Functions backend that proxies the Discogs API for Media Scanner.",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {}
+}
