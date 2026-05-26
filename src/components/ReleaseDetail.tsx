@@ -1,5 +1,6 @@
 import type { Company, ReleaseResponse } from "../types";
 import ConditionPrices from "./ConditionPrices";
+import DemandGauge from "./DemandGauge";
 
 interface Props {
   data: ReleaseResponse;
@@ -76,11 +77,6 @@ export default function ReleaseDetail({ data }: Props) {
               {[...release.genres, ...release.styles].join(" · ")}
             </p>
           )}
-          {release.community && (
-            <p className="community">
-              {release.community.have ?? 0} have · {release.community.want ?? 0} want
-            </p>
-          )}
           {release.discogsUrl && (
             <a className="discogs-link" href={release.discogsUrl} target="_blank" rel="noreferrer">
               View on Discogs ↗
@@ -95,6 +91,13 @@ export default function ReleaseDetail({ data }: Props) {
         release={release}
         currency={currency}
       />
+
+      {release.community && (release.community.have || release.community.want) ? (
+        <DemandGauge
+          have={release.community.have ?? 0}
+          want={release.community.want ?? 0}
+        />
+      ) : null}
 
       <section className="pressing card">
         <h3>Pressing &amp; manufacturing</h3>
