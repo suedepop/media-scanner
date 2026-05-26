@@ -6,9 +6,11 @@ export interface SearchResult {
   title: string;
   year: string | null;
   country: string | null;
+  catno: string | null;
   thumb: string | null;
   coverImage: string | null;
   formats: string[];
+  formatText: string | null;
   labels: string[];
   genres: string[];
   styles: string[];
@@ -92,12 +94,6 @@ export interface ReleaseResponse {
   currency: string;
   priceSuggestions: PriceSuggestions | null;
   marketplace: MarketplaceStats | null;
-}
-
-export interface PressingsResponse {
-  // release id (as string key) -> plant/manufacturing companies
-  pressings: Record<string, Company[]>;
-  rateLimited: boolean;
 }
 
 // The eight Discogs media-condition grades, best to worst.

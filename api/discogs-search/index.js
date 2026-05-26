@@ -35,9 +35,20 @@ module.exports = async function (context, req) {
         title: r.title,
         year: r.year || null,
         country: r.country || null,
+        catno: r.catno || null,
         thumb: r.thumb || null,
         coverImage: r.cover_image || null,
         formats: Array.isArray(r.format) ? r.format : [],
+        // Editor note attached to the format, e.g. "Hub-Servall Pressing" —
+        // often names the plant directly.
+        formatText: Array.isArray(r.formats)
+          ? r.formats
+              .map((f) => f && f.text)
+              .filter(Boolean)
+              .join(" · ") || null
+          : null,
+        // Discogs folds ALL credited companies (label, plant, studios,
+        // distributors) into `label` here, with no role tags.
         labels: Array.isArray(r.label) ? dedupe(r.label) : [],
         genres: Array.isArray(r.genre) ? r.genre : [],
         styles: Array.isArray(r.style) ? r.style : [],

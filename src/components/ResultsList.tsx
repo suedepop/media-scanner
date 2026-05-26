@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getPressings } from "../api";
-import type { Company, SearchResult } from "../types";
+import { useMemo, useState } from "react";
+import type { SearchResult } from "../types";
 
 interface Props {
   results: SearchResult[];
@@ -9,9 +8,20 @@ interface Props {
 }
 
 const ALL = "__all__";
-const MAX_ENRICH = 60; // cap plant lookups per scan to respect Discogs limits
 
-type PlantState = Company[] | "loading";
+// Best-guess plant detector. Discogs' search response lists every credited
+// company in `label[]` without role tags, so we pick out the ones whose name
+// looks like a pressing plant / manufacturer. Not role-verified — the detail
+// page shows the authoritative "Pressed By".
+const PLANT_RE =
+  /\b(?:pressing|pressings|pressed|mfg|manufactur(?:ed|ing)?|plant)\b|specialty records|rainbo|hub-?servall|monarch record|cinram|sonopress|sony dadc|optimal media|gz (?:media|digital|vinyl)|united record pressing|memphis record pressing|\bnimbus\b|disctronics|americ disc|presswell|allied record|columbia records pressing|capitol records pressing|record technology|quality record pressings|\bpallas\b|\bpdo\b|furnace|precision record/i;
+
+function detectPlant(r: SearchResult): string | null {
+  const fromLabels = r.labels.find((l) => PLANT_RE.test(l));
+  if (fromLabels) return fromLabels;
+  if (r.formatText && PLANT_RE.test(r.formatText)) return r.formatText;
+  return null;
+}
 
 export default function ResultsList({ results, barcode, onSelect }: Props) {
   // Count releases per country so we can offer filter chips with totals.
@@ -34,52 +44,6 @@ export default function ResultsList({ results, barcode, onSelect }: Props) {
 
   const filtered =
     selected === ALL ? results : results.filter((r) => (r.country || "Unknown") === selected);
-
-  // Plant ("Pressed By") info, fetched lazily for whatever is on screen.
-  const [pressings, setPressings] = useState<Record<number, PlantState>>({});
-  const requested = useRef<Set<number>>(new Set());
-  const filteredKey = filtered.map((r) => r.id).join(",");
-
-  useEffect(() => {
-    const toFetch = filtered
-      .map((r) => r.id)
-      .filter((id) => !requested.current.has(id))
-      .slice(0, MAX_ENRICH);
-    if (toFetch.length === 0) return;
-
-    toFetch.forEach((id) => requested.current.add(id));
-    setPressings((prev) => {
-      const next = { ...prev };
-      toFetch.forEach((id) => (next[id] = "loading"));
-      return next;
-    });
-
-    let cancelled = false;
-    getPressings(toFetch)
-      .then((res) => {
-        if (cancelled) return;
-        setPressings((prev) => {
-          const next = { ...prev };
-          toFetch.forEach((id) => (next[id] = res.pressings[String(id)] || []));
-          return next;
-        });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        // Allow a later retry and clear the spinners.
-        toFetch.forEach((id) => requested.current.delete(id));
-        setPressings((prev) => {
-          const next = { ...prev };
-          toFetch.forEach((id) => delete next[id]);
-          return next;
-        });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredKey]);
 
   return (
     <section className="results">
@@ -113,59 +77,50 @@ export default function ResultsList({ results, barcode, onSelect }: Props) {
         </p>
       ) : (
         <ul className="result-grid">
-          {filtered.map((r) => (
-            <li key={r.id}>
-              <button className="result-card" onClick={() => onSelect(r)}>
-                <div className="thumb">
-                  {r.thumb ? (
-                    <img src={r.thumb} alt="" loading="lazy" />
-                  ) : (
-                    <div className="thumb-placeholder">♪</div>
-                  )}
-                </div>
-                <div className="result-info">
-                  <span className="result-title">{r.title}</span>
-                  <span className="result-sub">
-                    {[r.year, r.country].filter(Boolean).join(" · ")}
-                  </span>
-                  <div className="badges">
-                    {r.formats.slice(0, 4).map((f, i) => (
-                      <span className="badge" key={`${f}-${i}`}>
-                        {f}
-                      </span>
-                    ))}
+          {filtered.map((r) => {
+            const plant = detectPlant(r);
+            const labelLine = [r.labels[0], r.catno].filter(Boolean).join(" · ");
+            return (
+              <li key={r.id}>
+                <button className="result-card" onClick={() => onSelect(r)}>
+                  <div className="thumb">
+                    {r.thumb ? (
+                      <img src={r.thumb} alt="" loading="lazy" />
+                    ) : (
+                      <div className="thumb-placeholder">♪</div>
+                    )}
                   </div>
-                  {r.labels.length > 0 && (
-                    <span className="result-label">{r.labels.slice(0, 2).join(", ")}</span>
-                  )}
-                  <PressedBy state={pressings[r.id]} />
-                </div>
-              </button>
-            </li>
-          ))}
+                  <div className="result-info">
+                    <span className="result-title">{r.title}</span>
+                    <span className="result-sub">
+                      {[r.year, r.country].filter(Boolean).join(" · ")}
+                    </span>
+                    <div className="badges">
+                      {r.formats.slice(0, 4).map((f, i) => (
+                        <span className="badge" key={`${f}-${i}`}>
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                    {labelLine && <span className="result-label">{labelLine}</span>}
+                    {plant && (
+                      <span
+                        className="press-line"
+                        title="Likely pressing plant, detected from release credits (not role-verified — see detail page)"
+                      >
+                        <span className="plant-icon" aria-hidden="true">
+                          🏭
+                        </span>
+                        {plant}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
-  );
-}
-
-function PressedBy({ state }: { state: PlantState | undefined }) {
-  if (state === "loading") {
-    return <span className="press-line loading">finding pressing plant…</span>;
-  }
-  if (!state || state.length === 0) return null;
-
-  const pressedBy = state.filter((c) => c.role === "Pressed By");
-  const chosen = pressedBy.length > 0 ? pressedBy : state;
-  const verb = pressedBy.length > 0 ? "Pressed by" : `${chosen[0].role}`;
-  const names = Array.from(new Set(chosen.map((c) => c.name))).slice(0, 2).join(" / ");
-
-  return (
-    <span className="press-line" title={`${verb}: ${names}`}>
-      <span className="plant-icon" aria-hidden="true">
-        🏭
-      </span>
-      {verb}: {names}
-    </span>
   );
 }
