@@ -309,6 +309,23 @@ body {
   color: var(--text-dim);
   font-size: 12px;
 }
+.press-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--good);
+  margin-top: 2px;
+}
+.press-line.loading {
+  color: var(--text-dim);
+  font-weight: 500;
+  font-style: italic;
+}
+.press-line .plant-icon {
+  font-size: 11px;
+}
 
 /* ---------- Badges ---------- */
 .badges {

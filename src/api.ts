@@ -1,4 +1,4 @@
-import type { ReleaseResponse, SearchResponse } from "./types";
+import type { PressingsResponse, ReleaseResponse, SearchResponse } from "./types";
 
 class ApiError extends Error {
   status: number;
@@ -42,6 +42,10 @@ export function getRelease(id: number, currency = "USD"): Promise<ReleaseRespons
   return getJson<ReleaseResponse>(
     `/api/discogs-release?id=${id}&curr=${encodeURIComponent(currency)}`
   );
+}
+
+export function getPressings(ids: number[]): Promise<PressingsResponse> {
+  return getJson<PressingsResponse>(`/api/discogs-pressings?ids=${ids.join(",")}`);
 }
 
 export { ApiError };

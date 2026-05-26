@@ -94,6 +94,12 @@ export interface ReleaseResponse {
   marketplace: MarketplaceStats | null;
 }
 
+export interface PressingsResponse {
+  // release id (as string key) -> plant/manufacturing companies
+  pressings: Record<string, Company[]>;
+  rateLimited: boolean;
+}
+
 // The eight Discogs media-condition grades, best to worst.
 export const CONDITIONS = [
   "Mint (M)",
