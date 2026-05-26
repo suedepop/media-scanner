@@ -21,7 +21,9 @@ module.exports = async function (context, req) {
 
   try {
     const data = await discogsGet(
-      `/database/search?barcode=${encodeURIComponent(barcode)}&per_page=50`
+      // 100 is the Discogs max per page — captures more pressings/regions so
+      // the client-side country filter has the full set to work with.
+      `/database/search?barcode=${encodeURIComponent(barcode)}&per_page=100`
     );
 
     const results = (data.results || [])

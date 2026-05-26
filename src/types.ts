@@ -47,6 +47,11 @@ export interface ReleaseLabel {
   catno: string;
 }
 
+export interface Company {
+  role: string; // Discogs entity_type_name, e.g. "Pressed By"
+  name: string; // company name, often includes the plant town
+}
+
 export interface Release {
   id: number;
   title: string;
@@ -57,6 +62,7 @@ export interface Release {
   genres: string[];
   styles: string[];
   labels: ReleaseLabel[];
+  companies: Company[];
   formats: ReleaseFormat[];
   images: ReleaseImage[];
   tracklist: Track[];

@@ -84,6 +84,7 @@ export default function App() {
 
         {view.stage === "results" && view.barcode && (
           <ResultsList
+            key={view.barcode}
             results={view.results}
             barcode={view.barcode}
             onSelect={handleSelect}

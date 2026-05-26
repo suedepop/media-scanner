@@ -1,14 +1,43 @@
-import type { ReleaseResponse } from "../types";
+import type { Company, ReleaseResponse } from "../types";
 import ConditionPrices from "./ConditionPrices";
 
 interface Props {
   data: ReleaseResponse;
 }
 
+// Roles that identify where/by whom the physical copy was actually made — the
+// "plant". The plant town is usually baked into the company name itself
+// (e.g. "Capitol Records Pressing Plant, Winchester").
+const PLANT_ROLES = new Set([
+  "Pressed By",
+  "Manufactured By",
+  "Made By",
+  "Duplicated By",
+  "Pressed At",
+  "Glass Mastered At",
+  "Manufactured For",
+]);
+
+const MASTER_ROLES = new Set([
+  "Mastered At",
+  "Mastered By",
+  "Remastered At",
+  "Lacquer Cut At",
+  "Cut By",
+  "Recorded At",
+  "Mixed At",
+]);
+
 export default function ReleaseDetail({ data }: Props) {
   const { release, priceSuggestions, marketplace, currency } = data;
   const cover = release.images[0]?.uri || release.images[0]?.uri150 || null;
   const artist = release.artists.join(", ");
+
+  const plant = release.companies.filter((c) => PLANT_ROLES.has(c.role));
+  const mastering = release.companies.filter((c) => MASTER_ROLES.has(c.role));
+  const otherCredits = release.companies.filter(
+    (c) => !PLANT_ROLES.has(c.role) && !MASTER_ROLES.has(c.role)
+  );
 
   return (
     <section className="detail">
@@ -67,6 +96,33 @@ export default function ReleaseDetail({ data }: Props) {
         currency={currency}
       />
 
+      <section className="pressing card">
+        <h3>Pressing &amp; manufacturing</h3>
+        {plant.length > 0 ? (
+          <CompanyList items={plant} plant />
+        ) : (
+          <p className="hint">
+            No pressing-plant company is recorded for this release. The plant is
+            often etched in the disc&apos;s runout/matrix — check there, or open
+            the full credits on Discogs.
+          </p>
+        )}
+
+        {mastering.length > 0 && (
+          <>
+            <h4 className="subhead">Mastering &amp; cutting</h4>
+            <CompanyList items={mastering} />
+          </>
+        )}
+
+        {otherCredits.length > 0 && (
+          <details className="other-credits">
+            <summary>Other credits ({otherCredits.length})</summary>
+            <CompanyList items={otherCredits} muted />
+          </details>
+        )}
+      </section>
+
       {release.tracklist.length > 0 && (
         <section className="tracklist card">
           <h3>Tracklist</h3>
@@ -82,5 +138,33 @@ export default function ReleaseDetail({ data }: Props) {
         </section>
       )}
     </section>
+  );
+}
+
+function CompanyList({
+  items,
+  plant,
+  muted,
+}: {
+  items: Company[];
+  plant?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <ul className={`company-list${muted ? " muted" : ""}`}>
+      {items.map((c, i) => (
+        <li key={`${c.role}-${c.name}-${i}`}>
+          <span className="company-role">{c.role}</span>
+          <span className="company-name">
+            {plant && (
+              <span className="plant-icon" aria-hidden="true">
+                🏭
+              </span>
+            )}
+            {c.name}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }

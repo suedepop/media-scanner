@@ -52,6 +52,16 @@ module.exports = async function (context, req) {
   }
 };
 
+function dedupeCompanies(companies) {
+  const seen = new Set();
+  return companies.filter((c) => {
+    const key = `${c.role}|${c.name}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function sanitizeCurrency(curr) {
   const allowed = new Set([
     "USD", "GBP", "EUR", "CAD", "AUD", "JPY", "CHF", "MXN",
@@ -76,6 +86,16 @@ function normalizeRelease(r) {
     labels: Array.isArray(r.labels)
       ? r.labels.map((l) => ({ name: l.name, catno: l.catno })).filter((l) => l.name)
       : [],
+    // Pressing plant / manufacturing credits. For many US pressings the plant
+    // town is part of the company name (e.g. "Capitol Records Pressing Plant,
+    // Winchester"). role = Discogs entity_type_name ("Pressed By", etc.).
+    companies: dedupeCompanies(
+      Array.isArray(r.companies)
+        ? r.companies
+            .map((c) => ({ role: c.entity_type_name || "", name: c.name || "" }))
+            .filter((c) => c.name)
+        : []
+    ),
     formats: Array.isArray(r.formats)
       ? r.formats.map((f) => ({
           name: f.name,
